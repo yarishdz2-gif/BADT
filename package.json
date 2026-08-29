@@ -1,15 +1,17 @@
 {
-  "name": "qyrex-db-panel",
-  "version": "1.0.0",
-  "description": "Panel web para administrar la base de datos de Qyrex",
+  "name": "hub-admin-panel",
+  "version": "2.0.0",
+  "description": "Panel de control avanzado con sistema de login",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "mongoose": "^7.0.3",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
-    "dotenv": "^16.0.3"
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
+    "mongoose": "^7.0.3"
   }
 }
