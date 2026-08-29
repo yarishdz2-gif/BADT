@@ -1,140 +1,188 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Qyrex - Visor de Base de Datos</title>
-  <style>
-    body {
-      margin: 0; padding: 20px; font-family: system-ui, sans-serif;
-      background: #0a0a0f; color: #e4e4ed;
-    }
-    h1 { color: #31d7ff; border-bottom: 1px solid #1e1e2a; padding-bottom: 10px; }
-    .controls { margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; }
-    input[type="text"] {
-      padding: 10px; border-radius: 8px; border: 1px solid #292c39;
-      background: #111118; color: white; width: 320px;
-    }
-    button {
-      padding: 10px 15px; border-radius: 8px; border: none;
-      background: #7c5cff; color: white; font-weight: bold; cursor: pointer;
-    }
-    button:hover { background: #6b4de0; }
-    .table-container { overflow-x: auto; margin-bottom: 40px; background: #111118; border-radius: 12px; padding: 15px; border: 1px solid #1e1e2a; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #1e1e2a; }
-    th { color: #85889b; text-transform: uppercase; letter-spacing: 1px; font-size: 11px; }
-    .hash { font-family: monospace; color: #f87171; font-size: 11px; word-break: break-all; }
-    .role-admin { color: #34d399; font-weight: bold; }
-    .status-msg { margin-bottom: 15px; font-weight: bold; }
-  </style>
-</head>
-<body>
-
-  <h1>Visualizador de Base de Datos (Admin)</h1>
-  <div class="controls">
-    <input type="text" id="apiUrl" placeholder="URL de tu API (ej: https://tu-app.onrender.com)">
-    <input type="text" id="jwtToken" placeholder="Pega tu token Bearer (JWT) aquí...">
-    <button onclick="cargarDatos()">Cargar Base de Datos</button>
-  </div>
-
-  <div id="status" class="status-msg"></div>
-  <div id="content"></div>
-
-  <script>
-    async function cargarDatos() {
-      let baseUrl = document.getElementById('apiUrl').value.trim();
-      const token = document.getElementById('jwtToken').value.trim();
-      const statusDiv = document.getElementById('status');
-      const content = document.getElementById('content');
-
-      if (!baseUrl || !token) {
-        alert('Por favor ingresa la URL del servidor y el token JWT.');
-        return;
-      }
-
-      // Limpiar la barra diagonal final si el usuario la agregó por error
-      if (baseUrl.endsWith('/')) {
-        baseUrl = baseUrl.slice(0, -1);
-      }
-
-      statusDiv.textContent = 'Conectando con el servidor...';
-      statusDiv.style.color = '#fbbf24';
-      content.innerHTML = '';
-
-      try {
-        const res = await fetch(`${baseUrl}/api/admin/database-dump`, {
-          headers: { 'Authorization': 'Bearer ' + token }
-        });
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Base de Datos</title>
+    <style>
+        /* Estilos base */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            padding: 40px 20px;
+        }
         
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || `Error HTTP: ${res.status}`);
+        /* Contenedor principal */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #1e1e1e;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
         }
 
-        const data = await res.json();
-        statusDiv.textContent = '¡Datos cargados correctamente!';
-        statusDiv.style.color = '#34d399';
-        renderTablas(data);
-      } catch (error) {
-        statusDiv.textContent = `Error: ${error.message}`;
-        statusDiv.style.color = '#f87171';
-        content.innerHTML = `<p style="color: #f87171;">Asegúrate de que la URL sea correcta, que tu backend esté encendido y que CORS permita peticiones desde GitHub Pages.</p>`;
-      }
-    }
+        h1, h2 {
+            text-align: center;
+            color: #4CAF50;
+            margin-bottom: 25px;
+        }
 
-    function renderTablas(data) {
-      const content = document.getElementById('content');
-      let html = '';
+        /* Entradas de formulario separadas y alineadas */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
 
-      // Tabla de Usuarios
-      const usuarios = data.usuarios || [];
-      html += `<h2>👥 Usuarios (${usuarios.length})</h2><div class="table-container"><table>
-               <tr><th>ID</th><th>Username</th><th>Rol</th><th>Premium</th><th>Password Hash (Scrypt)</th><th>Discord ID</th></tr>`;
-      usuarios.forEach(u => {
-        html += `<tr>
-          <td>${u._id}</td>
-          <td>${u.username}</td>
-          <td class="${u.role === 'admin' ? 'role-admin' : ''}">${u.role || 'user'}</td>
-          <td>${u.premium ? 'Sí' : 'No'}</td>
-          <td class="hash">${u.passwordHash || 'N/A'}</td>
-          <td>${u.discordId || 'N/A'}</td>
-        </tr>`;
-      });
-      html += `</table></div>`;
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            background-color: #2d2d2d;
+            border: 1px solid #444;
+            color: #ffffff;
+            border-radius: 6px;
+            box-sizing: border-box; /* Evita que el padding desborde el ancho */
+            font-size: 14px;
+        }
 
-      // Tabla de Scripts
-      const scripts = data.scripts || [];
-      html += `<h2>📜 Scripts (${scripts.length})</h2><div class="table-container"><table>
-               <tr><th>Script ID</th><th>Nombre</th><th>Owner ID</th><th>Modo</th><th>Ejecuciones</th></tr>`;
-      scripts.forEach(s => {
-        html += `<tr>
-          <td>${s.id || s._id}</td>
-          <td>${s.name}</td>
-          <td>${s.ownerId}</td>
-          <td>${s.keyMode || 'N/A'}</td>
-          <td>${s.executions || 0}</td>
-        </tr>`;
-      });
-      html += `</table></div>`;
+        /* Botón de envío */
+        button {
+            width: 100%;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 14px;
+            margin-top: 10px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
 
-      // Tabla de Códigos VIP
-      const vips = data.vips || [];
-      html += `<h2>💎 Códigos VIP (${vips.length})</h2><div class="table-container"><table>
-               <tr><th>Código</th><th>Días</th><th>Usado</th><th>Usado Por</th><th>Creado Por</th></tr>`;
-      vips.forEach(v => {
-        html += `<tr>
-          <td>${v.code}</td>
-          <td>${v.days}</td>
-          <td>${v.used ? 'Sí' : 'No'}</td>
-          <td>${v.usedBy || '-'}</td>
-          <td>${v.createdBy || '-'}</td>
-        </tr>`;
-      });
-      html += `</table></div>`;
+        button:hover {
+            background-color: #45a049;
+        }
 
-      content.innerHTML = html;
-    }
-  </script>
+        /* Tabla de base de datos */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+            background-color: #252525;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+
+        th {
+            background-color: #333;
+            color: #4CAF50;
+        }
+        
+        tr:hover {
+            background-color: #2a2a2a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Panel de Control de Datos</h1>
+        
+        <div class="form-group">
+            <label for="usuario">Usuario / ID:</label>
+            <input type="text" id="usuario" placeholder="Ej. Mod_Admin">
+        </div>
+        
+        <div class="form-group">
+            <label for="accion">Registro de Actividad / Log:</label>
+            <input type="text" id="accion" placeholder="Ej. Solicitud enviada">
+        </div>
+        
+        <button onclick="enviarRegistro()">Guardar en SQLite</button>
+
+        <h2>Registros Almacenados</h2>
+        <table id="tabla-registros">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Usuario</th>
+                    <th>Acción</th>
+                    <th>Fecha y Hora</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Los datos inyectados por JavaScript aparecerán aquí -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Obtener y renderizar los datos
+        async function cargarRegistros() {
+            try {
+                const respuesta = await fetch('/api/registros');
+                const json = await respuesta.json();
+                const tbody = document.querySelector('#tabla-registros tbody');
+                tbody.innerHTML = ''; 
+                
+                json.data.forEach(registro => {
+                    const fila = document.createElement('tr');
+                    fila.innerHTML = `
+                        <td>${registro.id}</td>
+                        <td>${registro.usuario}</td>
+                        <td>${registro.accion}</td>
+                        <td>${new Date(registro.fecha).toLocaleString('es-MX')}</td>
+                    `;
+                    tbody.appendChild(fila);
+                });
+            } catch (error) {
+                console.error('Error al cargar datos:', error);
+            }
+        }
+
+        // Enviar un nuevo registro a la base de datos
+        async function enviarRegistro() {
+            const usuario = document.getElementById('usuario').value;
+            const accion = document.getElementById('accion').value;
+
+            if (!usuario || !accion) {
+                alert('Faltan datos por completar.');
+                return;
+            }
+
+            try {
+                const respuesta = await fetch('/api/registros', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, accion })
+                });
+
+                if (respuesta.ok) {
+                    // Limpiar las cajas de texto y actualizar tabla
+                    document.getElementById('usuario').value = '';
+                    document.getElementById('accion').value = '';
+                    cargarRegistros();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Ejecutar carga de datos al abrir
+        window.onload = cargarRegistros;
+    </script>
 </body>
 </html>
