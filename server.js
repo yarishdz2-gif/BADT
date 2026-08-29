@@ -1,68 +1,53 @@
+require('dotenv').config();
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuración de Middlewares
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-// Configuración de la Base de Datos SQLite
-const db = new sqlite3.Database('./sistema.sqlite', (err) => {
-    if (err) {
-        console.error('Error al conectar con la base de datos:', err.message);
-    } else {
-        console.log('Conectado a la base de datos SQLite.');
-        // Genera la tabla automáticamente si no existe
-        db.run(`CREATE TABLE IF NOT EXISTS registros (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            usuario TEXT NOT NULL,
-            accion TEXT NOT NULL,
-            fecha DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`);
+// Tu URI de MongoDB (Puedes usar variables de entorno para mayor seguridad después)
+const MONGO_URI = "mongodb+srv://yarishdz2_db_user:7cp3VZH9aXK77wX@ikgmxer.8tj7kfa.mongodb.net/hubsilent?appName=ikgmxer";
+
+mongoose.connect(MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => {
+    console.log("Conectado exitosamente a la base de datos Qyrex (hubsilent) en MongoDB");
+}).catch(err => {
+    console.error("Error conectando a MongoDB:", err);
+});
+
+// Esquema para leer la colección 'qrexusers'
+const userSchema = new mongoose.Schema({
+    username: String,
+    role: { type: String, default: 'user' },
+    premium: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now }
+}, { collection: 'qrexusers' });
+
+const QrexUser = mongoose.model('QrexUser', userSchema);
+
+// API para enviar los usuarios al HTML
+app.get('/api/users', async (req, res) => {
+    try {
+        const users = await QrexUser.find().sort({ createdAt: -1 });
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-// Ruta para cargar la interfaz principal
+// Cargar la interfaz del panel
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// API: Obtener todos los datos de la base
-app.get('/api/registros', (req, res) => {
-    db.all('SELECT * FROM registros ORDER BY fecha DESC', [], (err, rows) => {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        res.json({ data: rows });
-    });
-});
-
-// API: Insertar un nuevo dato
-app.post('/api/registros', (req, res) => {
-    const { usuario, accion } = req.body;
-    
-    if (!usuario || !accion) {
-        res.status(400).json({ error: 'Todos los campos son requeridos' });
-        return;
-    }
-    
-    const sql = 'INSERT INTO registros (usuario, accion) VALUES (?, ?)';
-    db.run(sql, [usuario, accion], function(err) {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        res.json({ message: 'Guardado exitosamente', id: this.lastID });
-    });
-});
-
-// Iniciar servidor
 app.listen(PORT, () => {
-    console.log(`Servidor activo en http://localhost:${PORT}`);
+    console.log(`Panel Qyrex activo en http://localhost:${PORT}`);
 });
