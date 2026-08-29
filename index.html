@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qyrex - Visor de Base de Datos</title>
+  <style>
+    body {
+      margin: 0; padding: 20px; font-family: system-ui, sans-serif;
+      background: #0a0a0f; color: #e4e4ed;
+    }
+    h1 { color: #31d7ff; border-bottom: 1px solid #1e1e2a; padding-bottom: 10px; }
+    .controls { margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; }
+    input[type="text"] {
+      padding: 10px; border-radius: 8px; border: 1px solid #292c39;
+      background: #111118; color: white; width: 320px;
+    }
+    button {
+      padding: 10px 15px; border-radius: 8px; border: none;
+      background: #7c5cff; color: white; font-weight: bold; cursor: pointer;
+    }
+    button:hover { background: #6b4de0; }
+    .table-container { overflow-x: auto; margin-bottom: 40px; background: #111118; border-radius: 12px; padding: 15px; border: 1px solid #1e1e2a; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #1e1e2a; }
+    th { color: #85889b; text-transform: uppercase; letter-spacing: 1px; font-size: 11px; }
+    .hash { font-family: monospace; color: #f87171; font-size: 11px; word-break: break-all; }
+    .role-admin { color: #34d399; font-weight: bold; }
+    .status-msg { margin-bottom: 15px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <h1>Visualizador de Base de Datos (Admin)</h1>
+  <div class="controls">
+    <input type="text" id="apiUrl" placeholder="URL de tu API (ej: https://tu-app.onrender.com)">
+    <input type="text" id="jwtToken" placeholder="Pega tu token Bearer (JWT) aquí...">
+    <button onclick="cargarDatos()">Cargar Base de Datos</button>
+  </div>
+
+  <div id="status" class="status-msg"></div>
+  <div id="content"></div>
+
+  <script>
+    async function cargarDatos() {
+      let baseUrl = document.getElementById('apiUrl').value.trim();
+      const token = document.getElementById('jwtToken').value.trim();
+      const statusDiv = document.getElementById('status');
+      const content = document.getElementById('content');
+
+      if (!baseUrl || !token) {
+        alert('Por favor ingresa la URL del servidor y el token JWT.');
+        return;
+      }
+
+      // Limpiar la barra diagonal final si el usuario la agregó por error
+      if (baseUrl.endsWith('/')) {
+        baseUrl = baseUrl.slice(0, -1);
+      }
+
+      statusDiv.textContent = 'Conectando con el servidor...';
+      statusDiv.style.color = '#fbbf24';
+      content.innerHTML = '';
+
+      try {
+        const res = await fetch(`${baseUrl}/api/admin/database-dump`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `Error HTTP: ${res.status}`);
+        }
+
+        const data = await res.json();
+        statusDiv.textContent = '¡Datos cargados correctamente!';
+        statusDiv.style.color = '#34d399';
+        renderTablas(data);
+      } catch (error) {
+        statusDiv.textContent = `Error: ${error.message}`;
+        statusDiv.style.color = '#f87171';
+        content.innerHTML = `<p style="color: #f87171;">Asegúrate de que la URL sea correcta, que tu backend esté encendido y que CORS permita peticiones desde GitHub Pages.</p>`;
+      }
+    }
+
+    function renderTablas(data) {
+      const content = document.getElementById('content');
+      let html = '';
+
+      // Tabla de Usuarios
+      const usuarios = data.usuarios || [];
+      html += `<h2>👥 Usuarios (${usuarios.length})</h2><div class="table-container"><table>
+               <tr><th>ID</th><th>Username</th><th>Rol</th><th>Premium</th><th>Password Hash (Scrypt)</th><th>Discord ID</th></tr>`;
+      usuarios.forEach(u => {
+        html += `<tr>
+          <td>${u._id}</td>
+          <td>${u.username}</td>
+          <td class="${u.role === 'admin' ? 'role-admin' : ''}">${u.role || 'user'}</td>
+          <td>${u.premium ? 'Sí' : 'No'}</td>
+          <td class="hash">${u.passwordHash || 'N/A'}</td>
+          <td>${u.discordId || 'N/A'}</td>
+        </tr>`;
+      });
+      html += `</table></div>`;
+
+      // Tabla de Scripts
+      const scripts = data.scripts || [];
+      html += `<h2>📜 Scripts (${scripts.length})</h2><div class="table-container"><table>
+               <tr><th>Script ID</th><th>Nombre</th><th>Owner ID</th><th>Modo</th><th>Ejecuciones</th></tr>`;
+      scripts.forEach(s => {
+        html += `<tr>
+          <td>${s.id || s._id}</td>
+          <td>${s.name}</td>
+          <td>${s.ownerId}</td>
+          <td>${s.keyMode || 'N/A'}</td>
+          <td>${s.executions || 0}</td>
+        </tr>`;
+      });
+      html += `</table></div>`;
+
+      // Tabla de Códigos VIP
+      const vips = data.vips || [];
+      html += `<h2>💎 Códigos VIP (${vips.length})</h2><div class="table-container"><table>
+               <tr><th>Código</th><th>Días</th><th>Usado</th><th>Usado Por</th><th>Creado Por</th></tr>`;
+      vips.forEach(v => {
+        html += `<tr>
+          <td>${v.code}</td>
+          <td>${v.days}</td>
+          <td>${v.used ? 'Sí' : 'No'}</td>
+          <td>${v.usedBy || '-'}</td>
+          <td>${v.createdBy || '-'}</td>
+        </tr>`;
+      });
+      html += `</table></div>`;
+
+      content.innerHTML = html;
+    }
+  </script>
+</body>
+</html>
