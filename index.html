@@ -3,186 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Base de Datos</title>
+    <title>Panel de Base de Datos - Qyrex</title>
     <style>
-        /* Estilos base */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #121212;
-            color: #ffffff;
+            background-color: #0d1117;
+            color: #c9d1d9;
             margin: 0;
-            padding: 40px 20px;
-        }
-        
-        /* Contenedor principal */
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: #1e1e1e;
             padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
-        }
-
-        h1, h2 {
-            text-align: center;
-            color: #4CAF50;
-            margin-bottom: 25px;
-        }
-
-        /* Entradas de formulario separadas y alineadas */
-        .form-group {
-            margin-bottom: 20px;
         }
         
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #161b22;
+            padding: 20px 30px;
+            border-radius: 10px;
+            border: 1px solid #30363d;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        
+        .header h1 {
+            margin: 0;
+            color: #58a6ff;
+            font-size: 24px;
         }
 
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            background-color: #2d2d2d;
-            border: 1px solid #444;
-            color: #ffffff;
-            border-radius: 6px;
-            box-sizing: border-box; /* Evita que el padding desborde el ancho */
-            font-size: 14px;
+        /* Estructura para asegurar que los botones e iconos se vean bien acomodados */
+        .action-buttons {
+            display: flex;
+            gap: 15px; 
         }
 
-        /* Botón de envío */
-        button {
-            width: 100%;
-            background-color: #4CAF50;
+        .btn {
+            display: flex;
+            align-items: center;
+            gap: 10px; /* Separación exacta entre el icono y el texto */
+            background-color: #238636;
             color: white;
-            border: none;
-            padding: 14px;
-            margin-top: 10px;
-            cursor: pointer;
+            border: 1px solid rgba(240, 246, 252, 0.1);
+            padding: 10px 20px;
             border-radius: 6px;
-            font-weight: bold;
-            font-size: 16px;
-            transition: background-color 0.2s;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
         }
 
-        button:hover {
-            background-color: #45a049;
+        .btn:hover { 
+            background-color: #2ea043; 
+            border-color: rgba(240, 246, 252, 0.2);
         }
 
+        .btn-refresh { background-color: #1f6feb; }
+        .btn-refresh:hover { background-color: #388bfd; }
+        
         /* Tabla de base de datos */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 30px;
-            background-color: #252525;
-            border-radius: 8px;
+            background-color: #161b22;
+            border-radius: 10px;
             overflow: hidden;
+            border: 1px solid #30363d;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         }
 
         th, td {
-            padding: 15px;
+            padding: 18px;
             text-align: left;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid #30363d;
         }
 
-        th {
-            background-color: #333;
-            color: #4CAF50;
+        th { 
+            background-color: #21262d; 
+            color: #8b949e; 
+            font-weight: 600;
         }
         
-        tr:hover {
-            background-color: #2a2a2a;
+        tr:hover { background-color: #1f2428; }
+
+        /* Etiquetas para los rangos de usuario */
+        .badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
         }
+        
+        .badge-admin { background-color: #8957e5; color: white; }
+        .badge-user { background-color: #30363d; color: #c9d1d9; border: 1px solid #6e7681;}
+        .badge-premium { background-color: #d29922; color: white; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Panel de Control de Datos</h1>
-        
-        <div class="form-group">
-            <label for="usuario">Usuario / ID:</label>
-            <input type="text" id="usuario" placeholder="Ej. Mod_Admin">
+    <div class="header">
+        <h1>⚙️ Base de Datos - Qyrex</h1>
+        <div class="action-buttons">
+            <button class="btn btn-refresh" onclick="cargarUsuarios()">
+                <span>🔄</span> <span>Recargar Datos</span>
+            </button>
         </div>
-        
-        <div class="form-group">
-            <label for="accion">Registro de Actividad / Log:</label>
-            <input type="text" id="accion" placeholder="Ej. Solicitud enviada">
-        </div>
-        
-        <button onclick="enviarRegistro()">Guardar en SQLite</button>
-
-        <h2>Registros Almacenados</h2>
-        <table id="tabla-registros">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Usuario</th>
-                    <th>Acción</th>
-                    <th>Fecha y Hora</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Los datos inyectados por JavaScript aparecerán aquí -->
-            </tbody>
-        </table>
     </div>
 
+    <table>
+        <thead>
+            <tr>
+                <th>ID MongoDB</th>
+                <th>Usuario</th>
+                <th>Rango</th>
+                <th>Estado Premium</th>
+                <th>Fecha de Registro</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-usuarios">
+            <tr><td colspan="5" style="text-align: center; padding: 30px;">Cargando usuarios desde MongoDB Atlas...</td></tr>
+        </tbody>
+    </table>
+
     <script>
-        // Obtener y renderizar los datos
-        async function cargarRegistros() {
+        async function cargarUsuarios() {
+            const tbody = document.getElementById('tabla-usuarios');
             try {
-                const respuesta = await fetch('/api/registros');
-                const json = await respuesta.json();
-                const tbody = document.querySelector('#tabla-registros tbody');
-                tbody.innerHTML = ''; 
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 30px;">Conectando a MongoDB...</td></tr>';
+                const response = await fetch('/api/users');
+                const users = await response.json();
                 
-                json.data.forEach(registro => {
-                    const fila = document.createElement('tr');
-                    fila.innerHTML = `
-                        <td>${registro.id}</td>
-                        <td>${registro.usuario}</td>
-                        <td>${registro.accion}</td>
-                        <td>${new Date(registro.fecha).toLocaleString('es-MX')}</td>
-                    `;
-                    tbody.appendChild(fila);
-                });
-            } catch (error) {
-                console.error('Error al cargar datos:', error);
-            }
-        }
-
-        // Enviar un nuevo registro a la base de datos
-        async function enviarRegistro() {
-            const usuario = document.getElementById('usuario').value;
-            const accion = document.getElementById('accion').value;
-
-            if (!usuario || !accion) {
-                alert('Faltan datos por completar.');
-                return;
-            }
-
-            try {
-                const respuesta = await fetch('/api/registros', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usuario, accion })
-                });
-
-                if (respuesta.ok) {
-                    // Limpiar las cajas de texto y actualizar tabla
-                    document.getElementById('usuario').value = '';
-                    document.getElementById('accion').value = '';
-                    cargarRegistros();
+                tbody.innerHTML = '';
+                
+                if (users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 30px;">No hay usuarios registrados en la colección qrexusers.</td></tr>';
+                    return;
                 }
+
+                users.forEach(user => {
+                    const rolBadge = user.role === 'admin' 
+                        ? '<span class="badge badge-admin">Admin</span>' 
+                        : '<span class="badge badge-user">Usuario</span>';
+                        
+                    const premiumBadge = user.premium 
+                        ? '<span class="badge badge-premium">Premium</span>' 
+                        : '<span class="badge badge-user">Gratis</span>';
+                        
+                    const fecha = new Date(user.createdAt).toLocaleString('es-MX');
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="font-family: monospace; color: #8b949e; font-size: 13px;">${user._id}</td>
+                        <td style="font-size: 15px;"><strong>${user.username || 'Desconocido'}</strong></td>
+                        <td>${rolBadge}</td>
+                        <td>${premiumBadge}</td>
+                        <td style="color: #8b949e;">${fecha}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
             } catch (error) {
                 console.error('Error:', error);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #f85149; padding: 30px;">Error al conectar con la base de datos de Qyrex.</td></tr>';
             }
         }
 
-        // Ejecutar carga de datos al abrir
-        window.onload = cargarRegistros;
+        // Cargar datos automáticamente al entrar a la página
+        window.onload = cargarUsuarios;
     </script>
 </body>
 </html>
