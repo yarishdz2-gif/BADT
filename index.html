@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QyrexObf — GitHub Pages</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#080b0a;color:#eafff6;font-family:Segoe UI,Arial,sans-serif;padding:28px}main{max-width:1050px;margin:auto}.card{background:#0d1210;border:1px solid #203b31;border-radius:16px;padding:18px;margin:0 0 16px}h1{color:#00ff9d;text-align:center;margin:0 0 6px}p{color:#748179;text-align:center;margin:0 0 24px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:760px){.grid{grid-template-columns:1fr}}label{display:block;font-size:12px;color:#95a49d;margin:0 0 7px}input,textarea{width:100%;background:#070908;border:1px solid #293f35;border-radius:10px;color:#75ffc8;padding:12px;font:13px Consolas,monospace;outline:none}input:focus,textarea:focus{border-color:#00ff9d}textarea{min-height:220px;resize:vertical;line-height:1.45}.big{min-height:330px}.buttons{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}button{border:0;background:#00ff9d;color:#031009;font-weight:800;border-radius:10px;padding:12px 16px;cursor:pointer}.secondary{background:#10221b;color:#6cffc5;border:1px solid #295a47}.muted{font-size:12px;color:#66746e;margin-top:10px}.part{min-height:100px;margin-top:10px}.ok{color:#61ffc0}
+</style>
+</head>
+<body>
+<main>
+<h1>QYREX OBFUSCATOR</h1>
+<p>GitHub Pages • Luau → QYREX • sin Node.js ni servidor</p>
+
+<section class="card">
+<div class="grid">
+<div><label>BASE RAW DE TUS PARTES</label><input id="base" value="https://raw.githubusercontent.com/yarishdz2-gif/DT/refs/heads/main/qyrex"></div>
+<div><label>CLAVE QYREX</label><input id="key" value="QYREX-7F3A-PRKQ-2049"></div>
+</div>
+<br>
+<label>CÓDIGO LUAU</label>
+<textarea id="src" placeholder='print("QYREX ONLINE")
+task.wait(1)
+print("FUNCIONANDO")'></textarea>
+<div class="buttons"><button onclick="generate()">GENERAR</button><button class="secondary" onclick="copyId('manifest')">COPIAR MANIFEST</button><button class="secondary" onclick="copyId('loader')">COPIAR LOADER</button></div>
+<div id="status" class="muted">Listo.</div>
+</section>
+
+<section class="card"><label>IDENTIFICADOR DEL PROGRAMA</label><input id="pid" readonly></section>
+
+<section class="card"><label>MANIFEST DE LINKS</label><textarea id="manifest" class="big" readonly></textarea><div class="muted">Cada línea es un archivo que debes subir al repositorio en la ruta indicada.</div></section>
+
+<section class="card"><label>LOADER — comentario + una sola línea</label><textarea id="loader" class="big" readonly></textarea></section>
+
+<section class="card"><label>ARCHIVOS QYREX</label><div id="parts"></div></section>
+</main>
+<script>
+const TOKENS=["PRKQ","VQ7M","X9AZ","TQPX","N8LK","H2WF","R7QD","M4VX","Z8PN","KQ3R","F6TY","B9XW","J5LM","C7VA","P2ZS","W8KD"];
+const HEX="0123456789ABCDEF";
+function enc(s,key){const d=new TextEncoder().encode(s),k=new TextEncoder().encode(key),o=[];for(let i=0;i<d.length;i++){const v=(d[i]+k[i%k.length])&255;o.push(TOKENS[v>>4]+HEX[v&15])}return "QX9:"+o.join(" ")}
+function esc(s){return s.replaceAll("\\","\\\\").replaceAll("\"","\\\"").replaceAll("\n","\\n").replaceAll("\r","\\r")}
+function genId(){return "qx"+Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+function makeLoader(base,id,key,count){const km=Array.from(new TextEncoder().encode(key)).join(",");const tm=TOKENS.map((t,i)=>`["${t}"]=${i}`).join(",");const hm=HEX.split("").map((c,i)=>`["${c}"]=${i}`).join(",");const urls=[];for(let i=1;i<=count;i++)urls.push(`${base.replace(/\/$/,"")}/${id}/${String(i).padStart(3,"0")}.txt`);const ul=urls.map(u=>`"${esc(u)}"`).join(",");return `-- Protect dowland by Qyrexobf\nlocal a={${tm}};local b={${hm}};local k=string.char(${km});local u={${ul}};local function d(s)local o={};local n=0;s=tostring(s):gsub("^%s*QX9:%s*","");for t in s:gmatch("%S+")do local p=t:sub(1,-2);local h=a[p];local l=b[t:sub(-1)];if h~=nil and l~=nil then n=n+1;local x=string.byte(k,((n-1)%#k)+1);o[#o+1]=string.char((h*16+l-x)%256)end end;return table.concat(o)end;local z={};for i=1,#u do local ok,r=pcall(function()return game:HttpGet(u[i])end);if not ok then error("QYREX LINK "..i.." FAILED")end;z[#z+1]=d(r)end;local f,e=loadstring(table.concat(z));if not f then error(e)end;return f()`}
+async function download(name,text){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"text/plain;charset=utf-8"}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function generate(){const src=document.getElementById("src").value;const key=document.getElementById("key").value;const base=document.getElementById("base").value.replace(/\/$/,"");if(!src.trim())return status("Pega código primero.");if(!key)return status("Falta la clave.");if(!base)return status("Falta la base RAW.");const id=genId();const chunkSize=1500;const parts=[];for(let i=0;i<src.length;i+=chunkSize)parts.push(src.slice(i,i+chunkSize));const encoded=parts.map(p=>enc(p,key));document.getElementById("pid").value=id;document.getElementById("manifest").value=encoded.map((_,i)=>`${i+1}. ${base}/${id}/${String(i+1).padStart(3,"0")}.txt`).join("\n");document.getElementById("loader").value=makeLoader(base,id,key,encoded.length);const box=document.getElementById("parts");box.innerHTML="";encoded.forEach((v,i)=>{const t=document.createElement("textarea");t.className="part";t.readOnly=true;t.value=v;box.appendChild(Object.assign(document.createElement("div"),{className:"muted",textContent:`parts/${id}/${String(i+1).padStart(3,"0")}.txt`}));box.appendChild(t);const b=document.createElement("button");b.className="secondary";b.textContent="DESCARGAR";b.onclick=()=>download(`${String(i+1).padStart(3,"0")}.txt`,v);box.appendChild(b)});status(`Generado: ${encoded.length} partes. Sube esos archivos a GitHub en la ruta indicada.`)}
+function status(x){document.getElementById("status").textContent=x}
+async function copyId(id){const v=document.getElementById(id).value;if(!v)return;try{await navigator.clipboard.writeText(v)}catch{const t=document.createElement("textarea");t.value=v;document.body.appendChild(t);t.select();document.execCommand("copy");t.remove()} }
+</script>
+</body>
+</html>
